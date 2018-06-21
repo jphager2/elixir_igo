@@ -1,3 +1,67 @@
+defmodule Igo do
+  @coord_regex ~r{(?<row>\d+), (?<col>\d+).*}
+  @pass_regex ~r{.*pass.*}
+
+  def play do
+    size = get_size()
+    game = Game.new(size)
+    play(game)
+  end
+
+  def play(game) do
+    Game.print(game)
+
+    color = Game.turn(game)
+    move = get_move(color)
+    game =
+      if move == :pass do
+        Game.pass(game, color)
+      else
+        Game.play(game, color, move)
+      end
+
+    if Rules.game_over?(game) do
+      print_result(game)
+    else
+      play(game)
+    end
+  end
+
+  def get_move(color) do
+    input = IO.gets("#{color}'s turn. Enter move (e.g. 2, 2 OR pass): ")
+    coord = Regex.named_captures(@coord_regex, input)
+
+    cond do
+      Regex.match?(@pass_regex, input) ->
+        :pass
+      coord ->
+        { String.to_integer(coord["row"]), String.to_integer(coord["col"]) }
+      true ->
+        get_move(color)
+    end
+  end
+
+  def get_size do
+    result = Integer.parse(IO.gets("Enter a board size (9, 13, 19): "))
+
+    if result == :error do
+      get_size()
+    else
+      elem(result, 0)
+    end
+  end
+
+  def print_result(game) do
+    IO.inspect(game)
+  end
+end
+
+defmodule Rules do
+  def game_over?(game) do
+    game[:passes] >= 2
+  end
+end
+
 defmodule Printer do
   @colors %{ liberty: "-", black: "◯", white: "⬤" }
 
@@ -26,9 +90,6 @@ defmodule Printer do
   end
 end
 
-defmodule Igo do
-end
-
 defmodule Player do
   def print(player) do
     Printer.print(Enum.join([player[:name], "(", player[:captures], ")"]))
@@ -48,9 +109,24 @@ defmodule Board do
     initialize(size - 1, board ++ [:liberty])
   end
 
-  def place_stone(board, color, { x, y }) do
-    index = size(board) * x + y
-    List.replace_at(board, index, color)
+  def place_stone(board, color, { y, x }) do
+    index = size(board) * y + x
+    board = List.replace_at(board, index, color)
+    capture_stones(board, color, { y, x })
+  end
+
+  # TODO: Remove and count stones of opposite color without liberties
+  def capture_stones(board, color, { y, x }) do
+    points = points_around(board, { y, x })
+
+    captures = 1
+
+    { board, captures }
+  end
+
+  # TODO: Get the items around the point
+  def points_around(board, { y, x }) do
+    []
   end
 
   def size(board) do
@@ -70,6 +146,7 @@ defmodule Game do
       black: %{ captures: 0, name: 'Black' },
       white: %{ captures: 0, name: 'White' },
       moves: [],
+      passes: 0,
       board: board
     }
   end
@@ -96,6 +173,12 @@ defmodule Game do
     end)
   end
 
+  def update_passes(game, passes) do
+    Map.update!(game, :passes, fn _old_passes ->
+      passes
+    end)
+  end
+
   def push_move(game, move) do
     Map.update!(game, :moves, fn moves ->
       moves ++ [move]
@@ -109,38 +192,67 @@ defmodule Game do
   end
 
   def play(game, color, coord) do
-    captures = 1
     board = game[:board]
-    game = update_board(game, Board.place_stone(game[:board], color, coord))
-    # TODO: Assess rules and capture stones
+    { new_board, captures } = Board.place_stone(board, color, coord)
+    game = update_board(game, new_board)
     game = update_player(game, color, captures)
+    game = update_passes(game, 0)
     push_move(game, %{ color: color, coord: coord, captures: captures, board: board })
+  end
+
+  def pass(game, color) do
+    board = game[:board]
+    game = update_passes(game, game[:passes] + 1)
+    push_move(game, %{ color: color, pass: true, captures: 0, board: board })
   end
 
   def undo(game) do
     { move, game } = pop_move(game)
     game = update_board(game, move[:board])
+
+    game =
+      if move[:pass] do
+        update_passes(game, game[:passes] - 1)
+      else
+        game
+      end
+
     update_player(game, move[:color], move[:captures] * -1)
+  end
+
+  def turn(game) do
+    if rem(length(game[:moves]), 2) == 0 do
+      :black
+    else
+      :white
+    end
   end
 
   def print(game) do
     Player.print(game[:black])
     Printer.print(" | ")
     Player.print(game[:white])
+    Printer.print(" | Passes: #{game[:passes]}")
+    Printer.print(" | Moves: #{length(game[:moves])}")
     Printer.puts("")
 
     Board.print(game[:board])
   end
 end
 
-game = Game.new(19)
-game = Game.update_player(game, :black, 'John')
-game = Game.update_player(game, :white, 'Tereza')
+# game = Game.new(19)
+# game = Game.update_player(game, :black, 'John')
+# game = Game.update_player(game, :white, 'Tereza')
 
-game = Game.play(game, :black, { 2, 2 })
-game = Game.play(game, :white, { 6, 6 })
-game = Game.play(game, :black, { 6, 2 })
-game = Game.play(game, :white, { 2, 6 })
-game = Game.undo(game)
+# game = Game.play(game, :black, { 2, 2 })
+# game = Game.play(game, :white, { 6, 6 })
+# game = Game.play(game, :black, { 6, 2 })
+# game = Game.play(game, :white, { 2, 6 })
+# game = Game.pass(game, :black)
+# game = Game.undo(game)
+# game = Game.pass(game, :black)
+# game = Game.play(game, :white, { 16, 16 })
 
-Game.print(game)
+# Game.print(game)
+
+Igo.play
