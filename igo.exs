@@ -109,28 +109,90 @@ defmodule Board do
     initialize(size - 1, board ++ [:liberty])
   end
 
-  def place_stone(board, color, { y, x }) do
-    index = size(board) * y + x
+  def place_stone(board, color, coord) do
+    index = board_index(board, coord)
     board = List.replace_at(board, index, color)
-    capture_stones(board, color, { y, x })
+    capture_stones(board, color, coord)
   end
 
   # TODO: Remove and count stones of opposite color without liberties
-  def capture_stones(board, color, { y, x }) do
-    points = points_around(board, { y, x })
+  def capture_stones(board, color, coord) do
+    points = points_around(board, coord)
+    captures = []
+    Enum.each(points, fn point -> 
+      { point_color, point_coord } = point
+      
+      captures = 
+        if point_color !=  color do
+          group = stone_group_without_liberties(board, point_color, point_coord, [])
+          captures ++ group
+        else
+          captures
+        end
+    end)
 
-    captures = 1
+    captures = Enum.uniq(captures)
+    board = remove_stones(captures)
 
-    { board, captures }
+    { board, length(captures) }
+  end
+  
+  def stone_group_without_liberties(board, color, coord, group) when color == :liberty do
+    :liberty
+  end
+
+  def stone_group_without_liberties(board, color, coord, group) do
+    if Enum.member?(group, coord) do
+      group
+    else
+      points = points_around(board, coord)
+      Enum.each(points, fn point -> 
+        { point_color, point_coord } = point
+        group = 
+          if point_color == color do
+            stone_group_without_liberties(board, color, point_coord, group ++ [point_coord])
+          else
+            group
+          end
+      end)
+      group
+    end
+  end
+
+  def remove_captures(board, captures) do
+    Enum.each(captures, fn(coord) ->
+      index = board_index(board, coord)
+      board = List.replace_at(board, index, :liberty)
+    end)
+    board
   end
 
   # TODO: Get the items around the point
   def points_around(board, { y, x }) do
-    []
+    up = { y - 1, x }
+    right = { y, x + 1 }
+    down = { y + 1, x }
+    left = { y, x - 1 }
+
+    [
+      { at_coord(board, up), up },
+      { at_coord(board, right), right },
+      { at_coord(board, down), down },
+      { at_coord(board, left), left }
+    ]
+  end
+
+  def at_coord(board, coord) do
+    index = board_index(board, coord)
+    Enum.at(board, index)
   end
 
   def size(board) do
     round(:math.sqrt(length(board)))
+  end
+
+  def board_index(board, { y, x }) do
+    size(board) * y + x
   end
 
   def print(board) do
