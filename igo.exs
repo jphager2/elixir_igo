@@ -116,16 +116,50 @@ defmodule Printer do
     print(@colors[color])
   end
 
-  def print_chunk(chunk) do
-    Enum.each(chunk, fn color ->
-      print_color(color) 
+  def print_star do
+    print("*")
+  end
+
+  def print_row(row, row_index) do
+    if row_index >= 10 do
+      print(row_index)
+    else
+      print("#{row_index} ")
+    end
+
+    Enum.reduce(row, 0, fn(color, col_index) ->
+      if color == :liberty && Board.star?(length(row), { row_index, col_index }) do
+        print_star()
+      else
+        print_color(color)
+      end
       print(" ")
+
+      col_index + 1
     end)
     puts("")
   end
 
-  def print_chunks(chunks) do
-    Enum.each(chunks, fn chunk -> print_chunk(chunk) end)
+  def print_numbers(max, current) when current >= max do
+    puts(current)
+  end
+
+  def print_numbers(max, current) do
+    if current >= 10 do
+      print(current)
+    else
+      print("#{current} ")
+    end
+    print_numbers(max, current + 1)
+  end
+
+  def print_rows(rows) do
+    print("  ")
+    print_numbers(length(rows) - 1, 0)
+    Enum.reduce(rows, 0, fn(row, index) ->
+      print_row(row, index)
+      index + 1
+    end)
   end
 end
 
@@ -244,6 +278,20 @@ defmodule Board do
     Enum.at(board, index)
   end
 
+  def star?(size, { y, x }) do
+    middle = (size - 1) / 2
+
+    cond do
+      size < 9 && size >= 3 ->
+        y == middle && x == middle
+      size < 13 ->
+        ((y == 2 || y == 6) && (x == 2 || x == 6)) || (y == 4 && x == 4)
+      size >= 13 ->
+        bottom = size - 4
+        (y == 3 || y == middle || y == bottom) && (x == 3 || x == middle || x == bottom)
+    end
+  end
+
   def size(board) do
     round(:math.sqrt(length(board)))
   end
@@ -253,7 +301,7 @@ defmodule Board do
   end
 
   def print(board) do
-    Printer.print_chunks(Enum.chunk_every(board, size(board)))
+    Printer.print_rows(Enum.chunk_every(board, size(board)))
   end
 end
 
