@@ -1,6 +1,7 @@
 defmodule Igo do
   @coord_regex ~r{(?<row>\d+), (?<col>\d+).*}
   @pass_regex ~r{.*pass.*}
+  @done_regex ~r{.*done.*}
 
   def play do
     size = get_size()
@@ -37,15 +38,22 @@ defmodule Igo do
       end
 
     if Rules.game_over?(game) do
-      print_result(game)
       Printer.puts("Game Over! Time to count :D!")
+
+      Game.print(game)
+      black = get_territory_groups(:black, [])
+      Game.print(game)
+      white = get_territory_groups(:white, [])
+
+      territory = Rules.count_territory({ black, white })
+      print_result(game, territory)
     else
       play(game)
     end
   end
 
   def get_move(color) do
-    input = IO.gets("#{color}'s turn. Enter move (e.g. 2, 2 OR pass): ")
+    input = IO.gets("It's #{color}'s turn. Enter move (e.g. 2, 2 OR pass): ")
     coord = Regex.named_captures(@coord_regex, input)
 
     cond do
@@ -68,8 +76,27 @@ defmodule Igo do
     end
   end
 
-  def print_result(game) do
+  def get_territory_groups(color, group) do
+    input = IO.gets("Mark #{color}'s territory (e.g. 2, 2 OR done): ")
+    coord_match = Regex.named_captures(@coord_regex, input)
+
+    cond do
+      Regex.match?(@done_regex, input) ->
+        group
+      coord_match ->
+        coord = {
+          String.to_integer(coord_match["row"]),
+          String.to_integer(coord_match["col"])
+        }
+        get_territory_groups(color, group ++ [coord])
+      true ->
+        get_territory_groups(color, group)
+    end
+  end
+
+  def print_result(game, territory) do
     Game.print(game)
+    IO.inspect(territory)
   end
 
   def print_error(msg) do
@@ -98,6 +125,10 @@ defmodule Rules do
     board = last_move[:board]
 
     last_move[:captures] == 1 && Board.at_coord(board, move) == color
+  end
+
+  def count_territory({ black, white }) do
+    IO.inspect({ black, white })
   end
 end
 
@@ -249,6 +280,31 @@ defmodule Board do
           end
         true ->
           group
+      end
+    end
+  end
+
+  def territory_group_with_dead_stones(board, coord, color, { territory, dead_stones }) do
+    next_color = at_coord(board, coord)
+
+    if next_color == color do
+      { territory, dead_stones }
+    else
+      dead_stones =
+        if next_color != :liberty && !Enum.member?(dead_stones, coord) do
+          dead_stones ++ [coord]
+        else
+          dead_stones
+        end
+
+      if Enum.member?(territory, coord) do
+        { territory, dead_stones }
+      else
+        coords = coords_around(board, coord)
+
+        Enum.reduce(coords, { territory ++ [coord], dead_stones } , fn(next_coord, state) ->
+          territory_group_with_dead_stones(board, next_coord, color, state)
+        end)
       end
     end
   end
