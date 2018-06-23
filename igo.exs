@@ -17,11 +17,28 @@ defmodule Igo do
       if move == :pass do
         Game.pass(game, color)
       else
-        Game.play(game, color, move)
+        cond do
+          Rules.play_on_stone?(game, move) ->
+            print_error("You can't play on top of a stone!")
+            game
+          Rules.ko?(game, move, color) ->
+            print_error("You can't play the ko!")
+            game
+          true ->
+            game = Game.play(game, color, move)
+
+            if Rules.suicide?(game, move) do
+              print_error("You can't play a suicide move!")
+              Game.undo(game)
+            else
+              game
+            end
+        end
       end
 
     if Rules.game_over?(game) do
       print_result(game)
+      Printer.puts("Game Over! Time to count :D!")
     else
       play(game)
     end
@@ -52,13 +69,35 @@ defmodule Igo do
   end
 
   def print_result(game) do
-    IO.inspect(game)
+    Game.print(game)
+  end
+
+  def print_error(msg) do
+    Printer.puts(msg)
   end
 end
 
 defmodule Rules do
   def game_over?(game) do
     game[:passes] >= 2
+  end
+  
+  def play_on_stone?(game, move) do
+    board = game[:board]
+    Board.at_coord(board, move) != :liberty
+  end
+
+  def suicide?(game, move) do
+    board = game[:board]
+    Board.stone_group_without_liberties(board, move) != :liberty
+  end
+
+  # NOTE: I'm not sure about this logic...
+  def ko?(game, move, color) do
+    last_move = Enum.at(game[:moves], -1)
+    board = last_move[:board]
+
+    last_move[:captures] == 1 && Board.at_coord(board, move) == color
   end
 end
 
@@ -96,6 +135,16 @@ defmodule Player do
   end
 end
 
+defmodule Stone do
+  def opposite_color(color) do
+    if color == :black do
+      :white
+    else
+      :black
+    end
+  end
+end
+
 defmodule Board do
   def new(size) do
     initialize(size * size, [])
@@ -112,74 +161,82 @@ defmodule Board do
   def place_stone(board, color, coord) do
     index = board_index(board, coord)
     board = List.replace_at(board, index, color)
-    capture_stones(board, color, coord)
+    capture_stones(board, Stone.opposite_color(color), coord)
   end
 
-  # TODO: Remove and count stones of opposite color without liberties
-  def capture_stones(board, color, coord) do
-    points = points_around(board, coord)
-    captures = []
-    Enum.each(points, fn point -> 
-      { point_color, point_coord } = point
-      
-      captures = 
-        if point_color !=  color do
-          group = stone_group_without_liberties(board, point_color, point_coord, [])
-          captures ++ group
-        else
-          captures
-        end
+  def capture_stones(board, capture_color, coord) do
+    coords = coords_around(board, coord)
+    captures = Enum.reduce(coords, [], fn(next_coord, group) ->
+      coord_group = stone_group_without_liberties(board, next_coord, capture_color, group)
+
+      if coord_group == :liberty do
+        group
+      else
+        coord_group
+      end
     end)
 
-    captures = Enum.uniq(captures)
-    board = remove_stones(captures)
+    board = remove_stones(board, captures)
 
     { board, length(captures) }
   end
   
-  def stone_group_without_liberties(board, color, coord, group) when color == :liberty do
-    :liberty
-  end
+  def stone_group_without_liberties(board, coord) do
+    group = [coord]
+    color = at_coord(board, coord)
 
-  def stone_group_without_liberties(board, color, coord, group) do
-    if Enum.member?(group, coord) do
-      group
+    if color == :liberty do
+      :liberty
     else
-      points = points_around(board, coord)
-      Enum.each(points, fn point -> 
-        { point_color, point_coord } = point
-        group = 
-          if point_color == color do
-            stone_group_without_liberties(board, color, point_coord, group ++ [point_coord])
-          else
-            group
-          end
+      coords = coords_around(board, coord)
+      Enum.reduce(coords, group, fn(next_coord, new_group) ->
+        stone_group_without_liberties(board, next_coord, color, new_group)
       end)
-      group
     end
   end
 
-  def remove_captures(board, captures) do
-    Enum.each(captures, fn(coord) ->
-      index = board_index(board, coord)
-      board = List.replace_at(board, index, :liberty)
-    end)
-    board
+  def stone_group_without_liberties(board, coord, color, group) do
+    if group == :liberty do
+      :liberty
+    else
+      next_color = at_coord(board, coord)
+
+      cond do
+        next_color == :liberty ->
+          :liberty
+        next_color == color ->
+          if Enum.member?(group, coord) do
+            group
+          else
+            coords = coords_around(board, coord)
+            Enum.reduce(coords, group ++ [coord], fn(next_coord, new_group) ->
+              stone_group_without_liberties(board, next_coord, color, new_group)
+            end)
+          end
+        true ->
+          group
+      end
+    end
   end
 
-  # TODO: Get the items around the point
-  def points_around(board, { y, x }) do
-    up = { y - 1, x }
-    right = { y, x + 1 }
-    down = { y + 1, x }
-    left = { y, x - 1 }
-
-    [
-      { at_coord(board, up), up },
-      { at_coord(board, right), right },
-      { at_coord(board, down), down },
-      { at_coord(board, left), left }
+  def coords_around(board, { y, x }) do
+    coords = [
+      { y - 1, x },
+      { y, x + 1 },
+      { y + 1, x },
+      { y, x - 1 }
     ]
+
+    Enum.filter(coords, fn({ y, x }) ->
+      y >= 0 && y < size(board) && x >= 0 && x < size(board)
+    end)
+  end
+
+  def remove_stones(board, coords) do
+    Enum.reduce(coords, board, fn(coord, board) ->
+      index = board_index(board, coord)
+      List.replace_at(board, index, :liberty)
+    end)
   end
 
   def at_coord(board, coord) do
