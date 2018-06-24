@@ -2,6 +2,7 @@ defmodule Igo do
   @coord_regex ~r{(?<row>\d+), (?<col>\d+).*}
   @pass_regex ~r{.*pass.*}
   @done_regex ~r{.*done.*}
+  @undo_regex ~r{.*undo.*}
 
   def play do
     size = get_size()
@@ -15,26 +16,29 @@ defmodule Igo do
     color = Game.turn(game)
     move = get_move(color)
     game =
-      if move == :pass do
-        Game.pass(game, color)
-      else
-        cond do
-          Rules.play_on_stone?(game, move) ->
-            print_error("You can't play on top of a stone!")
-            game
-          Rules.ko?(game, move, color) ->
-            print_error("You can't play the ko!")
-            game
-          true ->
-            game = Game.play(game, color, move)
-
-            if Rules.suicide?(game, move) do
-              print_error("You can't play a suicide move!")
-              Game.undo(game)
-            else
+      cond do
+        move == :pass ->
+          Game.pass(game, color)
+        move == :undo ->
+          Game.undo(game)
+        true ->
+          cond do
+            Rules.play_on_stone?(game, move) ->
+              print_error("You can't play on top of a stone!")
               game
-            end
-        end
+            Rules.ko?(game, move, color) ->
+              print_error("You can't play the ko!")
+              game
+            true ->
+              game = Game.play(game, color, move)
+
+              if Rules.suicide?(game, move) do
+                print_error("You can't play a suicide move!")
+                Game.undo(game)
+              else
+                game
+              end
+          end
       end
 
     if Rules.game_over?(game) do
@@ -45,20 +49,27 @@ defmodule Igo do
       Game.print(game)
       white = get_territory_groups(:white, [])
 
-      territory = Rules.count_territory({ black, white })
-      print_result(game, territory)
+      { black_territory, black_dead_stones } = Rules.count_territory(game, :black, black)
+      { white_territory, white_dead_stones } = Rules.count_territory(game, :white, white)
+
+      game = Game.update_player(game, :black, black_dead_stones)
+      game = Game.update_player(game, :white, white_dead_stones)
+
+      print_result(game, { black_territory, white_territory }, 6.5)
     else
       play(game)
     end
   end
 
   def get_move(color) do
-    input = IO.gets("It's #{color}'s turn. Enter move (e.g. 2, 2 OR pass): ")
+    input = IO.gets("It's #{color}'s turn. Enter move (e.g. 2, 2 OR pass OR undo): ")
     coord = Regex.named_captures(@coord_regex, input)
 
     cond do
       Regex.match?(@pass_regex, input) ->
         :pass
+      Regex.match?(@undo_regex, input) ->
+        :undo
       coord ->
         { String.to_integer(coord["row"]), String.to_integer(coord["col"]) }
       true ->
@@ -94,9 +105,33 @@ defmodule Igo do
     end
   end
 
-  def print_result(game, territory) do
+  def print_result(game, { black_territory, white_territory }, komi) do
     Game.print(game)
-    IO.inspect(territory)
+
+    black_points = game[:black][:captures] + black_territory
+    white_points = game[:white][:captures] + white_territory + komi
+
+    winner =
+      cond do
+        black_points > white_points ->
+          :black
+        black_points < white_points ->
+          :white
+        true ->
+          :tie
+      end
+
+    Printer.print("Black: #{black_points}, White: #{white_points}")
+    if komi > 0 do
+      Printer.puts(" (komi: #{komi})")
+    else
+      Printer.puts("")
+    end
+    if winner == :tie do
+      Printer.puts("The result is a tie!")
+    else
+      Printer.puts("The winner is #{winner}!")
+    end
   end
 
   def print_error(msg) do
@@ -127,8 +162,14 @@ defmodule Rules do
     last_move[:captures] == 1 && Board.at_coord(board, move) == color
   end
 
-  def count_territory({ black, white }) do
-    IO.inspect({ black, white })
+  def count_territory(game, color, groups) do
+    board = game[:board]
+
+    { territory, dead_stones } = Enum.reduce(groups, { [], [] }, fn(coord, counts) ->
+      Board.territory_group_with_dead_stones(board, coord, color, counts)
+    end)
+
+    { length(territory), length(dead_stones) }
   end
 end
 
@@ -430,17 +471,21 @@ defmodule Game do
   end
 
   def undo(game) do
-    { move, game } = pop_move(game)
-    game = update_board(game, move[:board])
+    if length(game[:moves]) > 0 do
+      { move, game } = pop_move(game)
+      game = update_board(game, move[:board])
 
-    game =
-      if move[:pass] do
-        update_passes(game, game[:passes] - 1)
-      else
-        game
-      end
+      game =
+        if move[:pass] do
+          update_passes(game, game[:passes] - 1)
+        else
+          game
+        end
 
-    update_player(game, move[:color], move[:captures] * -1)
+      update_player(game, move[:color], move[:captures] * -1)
+    else
+      game
+    end
   end
 
   def turn(game) do
