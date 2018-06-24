@@ -154,7 +154,6 @@ defmodule Rules do
     Board.stone_group_without_liberties(board, move) != :liberty
   end
 
-  # NOTE: I'm not sure about this logic...
   def ko?(game, move, color) do
     last_move = Enum.at(game[:moves], -1)
     board = last_move[:board]
@@ -507,20 +506,5 @@ defmodule Game do
     Board.print(game[:board])
   end
 end
-
-# game = Game.new(19)
-# game = Game.update_player(game, :black, 'John')
-# game = Game.update_player(game, :white, 'Tereza')
-
-# game = Game.play(game, :black, { 2, 2 })
-# game = Game.play(game, :white, { 6, 6 })
-# game = Game.play(game, :black, { 6, 2 })
-# game = Game.play(game, :white, { 2, 6 })
-# game = Game.pass(game, :black)
-# game = Game.undo(game)
-# game = Game.pass(game, :black)
-# game = Game.play(game, :white, { 16, 16 })
-
-# Game.print(game)
 
 Igo.play
