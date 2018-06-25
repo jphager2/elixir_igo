@@ -3,8 +3,9 @@ defmodule Igo do
   @pass_regex ~r{.*pass.*}
   @done_regex ~r{.*done.*}
   @undo_regex ~r{.*undo.*}
-  @next_regex ~r{n(ext)?.*}
-  @previous_regex ~r{p(revious)?}
+  @stop_regex ~r{.*stop.*}
+  @next_regex ~r{\An(ext)?.*}
+  @previous_regex ~r{\Ap(revious)?}
   @index_regex ~r{\d+}
 
   def review(reader) do
@@ -17,10 +18,12 @@ defmodule Igo do
         SgfReader.next(reader)
       index == :previous ->
         SgfReader.previous(reader)
+      index == :stop ->
+        :stop
       is_integer(index) ->
         SgfReader.seek(reader, index)
       true ->
-        :stop
+        reader
     end
 
     if reader == :stop do
@@ -42,7 +45,7 @@ defmodule Igo do
   end
 
   def get_seek_index do
-    index = String.trim(IO.gets("Seek to move (e.g. next, previous, 42): "))
+    index = String.trim(IO.gets("Seek to move (e.g. next, previous, 42, stop): "))
 
     cond do
       Regex.match?(@next_regex, index) ->
@@ -51,8 +54,10 @@ defmodule Igo do
         :previous
       Regex.match?(@index_regex, index) ->
         String.to_integer(index)
-      true ->
+      Regex.match?(@stop_regex, index) ->
         :stop
+      true ->
+        :continue
     end
   end
 
