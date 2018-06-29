@@ -1,6 +1,6 @@
-defmodule ElixirGo do
+defmodule Igo do
   @moduledoc """
-  Documentation for ElixirGo.
+  Documentation for Igo.
   """
 
   @doc """
@@ -8,7 +8,7 @@ defmodule ElixirGo do
 
   ## Examples
 
-      iex> ElixirGo.hello
+      iex> Igo.hello
       :world
 
   """

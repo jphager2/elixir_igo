@@ -1,21 +1,21 @@
-# ElixirGo
+# ElixirIgo
 
-**TODO: Add description**
+The game of Go in elixir.
 
 ## Installation
 
 If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `elixir_go` to your list of dependencies in `mix.exs`:
+by adding `elixir_igo` to your list of dependencies in `mix.exs`:
 
 ```elixir
 def deps do
   [
-    {:elixir_go, "~> 0.1.0"}
+    {:elixir_igo, "~> 0.1.0"}
   ]
 end
 ```
 
 Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
 and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at [https://hexdocs.pm/elixir_go](https://hexdocs.pm/elixir_go).
+be found at [https://hexdocs.pm/elixir_igo](https://hexdocs.pm/elixir_igo).
 
