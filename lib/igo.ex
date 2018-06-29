@@ -1,6 +1,8 @@
 alias Igo.Game, as: Game
 alias Igo.Rules, as: Rules
+alias Igo.GoKifu, as: GoKifu
 alias Igo.Printer, as: Printer
+alias Igo.SgfReader, as: SgfReader
 
 defmodule Igo do
   @moduledoc """
@@ -48,6 +50,53 @@ defmodule Igo do
     reader = SgfReader.new(file)
 
     review(reader)
+  end
+
+  @doc """
+  Get games from gokifu.com.
+
+  ## Examples
+
+      iex> Igo.gokifu
+
+  """
+  def gokifu do
+    games = GoKifu.get_games
+
+    Enum.reduce(games, 1, fn(game, i) ->
+      { black, white, date, result, _ } = game
+      Printer.print(String.pad_leading(to_string(i), 5))
+      Printer.print(") ")
+      Printer.print_color(:black)
+      Printer.print(" #{black} | ")
+      Printer.print_color(:white)
+      Printer.print(" #{white} | #{date} | #{result}")
+      Printer.puts("")
+      i + 1
+    end)
+    
+    index = get_index()
+
+    if index != :stop && index > 0 && index <= length(games) do
+      game = Enum.at(games, index - 1)
+      GoKifu.download_game(game)
+      
+      file = GoKifu.download_path(game)
+      reader = SgfReader.new(file)
+
+      review(reader)
+    end
+  end
+
+  def get_index do
+    index = String.trim(IO.gets("Pick a game: "))
+
+    cond do
+      Regex.match?(@index_regex, index) ->
+        String.to_integer(index)
+      true ->
+        :stop
+    end
   end
 
   def review(reader) do
