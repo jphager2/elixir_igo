@@ -32,29 +32,35 @@ defmodule Igo.SgfReader do
       index < 0 ->
         Printer.puts("Already at first move!")
         reset_game(reader)
+
       index >= length(reader[:moves]) ->
         Printer.puts("Already at last move!")
         seek(reader, length(reader[:moves]) - 1)
+
       index == reader[:move_index] ->
         reader
+
       true ->
-        { game, next_index } =
+        {game, next_index} =
           if index > reader[:move_index] do
             next_index = reader[:move_index] + 1
             move_str = Enum.at(reader[:moves], next_index)
-            { type, move } = parse_move(move_str)
+            {type, move} = parse_move(move_str)
+
             game =
               if type == :pass do
-                { color } = move
+                {color} = move
                 Game.pass(reader[:game], color)
               else
-                { color, y, x } = move
-                Game.play(reader[:game], color, { y, x })
+                {color, y, x} = move
+                Game.play(reader[:game], color, {y, x})
               end
-            { game, next_index }
+
+            {game, next_index}
           else
-            { Game.undo(reader[:game]), reader[:move_index] - 1 }
+            {Game.undo(reader[:game]), reader[:move_index] - 1}
           end
+
         reader = Map.put(reader, :game, game)
         reader = Map.put(reader, :move_index, next_index)
         seek(reader, index)
@@ -100,13 +106,15 @@ defmodule Igo.SgfReader do
   defp parse_move(move) do
     match = Regex.named_captures(@move_regex, move)
 
-    pass_move = { :pass, { to_color(match["color"]) } }
+    pass_move = {:pass, {to_color(match["color"])}}
 
     if match do
       if match["row"] == "t" && match["col"] == "t" do
         pass_move
       else
-        { :play, { to_color(match["color"]), letter_to_integer(match["row"]), letter_to_integer(match["col"]) } }
+        {:play,
+         {to_color(match["color"]), letter_to_integer(match["row"]),
+          letter_to_integer(match["col"])}}
       end
     else
       pass_move

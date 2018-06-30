@@ -1,7 +1,7 @@
 alias Igo.Board, as: Board
 
 defmodule Igo.Printer do
-  @colors %{ liberty: "-", black: "◯", white: "⬤" }
+  @colors %{liberty: "-", black: "◯", white: "⬤"}
 
   def puts(msg) do
     IO.puts(msg)
@@ -18,7 +18,8 @@ defmodule Igo.Printer do
   def print_rows(rows) do
     print("  ")
     print_numbers(length(rows) - 1, 0)
-    Enum.reduce(rows, 0, fn(row, index) ->
+
+    Enum.reduce(rows, 0, fn row, index ->
       print_row(row, index)
       index + 1
     end)
@@ -35,16 +36,18 @@ defmodule Igo.Printer do
       print("#{row_index} ")
     end
 
-    Enum.reduce(row, 0, fn(color, col_index) ->
-      if color == :liberty && Board.star?(length(row), { row_index, col_index }) do
+    Enum.reduce(row, 0, fn color, col_index ->
+      if color == :liberty && Board.star?(length(row), {row_index, col_index}) do
         print_star()
       else
         print_color(color)
       end
+
       print(" ")
 
       col_index + 1
     end)
+
     puts("")
   end
 
@@ -58,6 +61,7 @@ defmodule Igo.Printer do
     else
       print("#{current} ")
     end
+
     print_numbers(max, current + 1)
   end
 end

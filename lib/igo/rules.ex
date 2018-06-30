@@ -25,10 +25,11 @@ defmodule Igo.Rules do
   def count_territory(game, color, groups) do
     board = game[:board]
 
-    { territory, dead_stones } = Enum.reduce(groups, { [], [] }, fn(coord, counts) ->
-      Board.territory_group_with_dead_stones(board, coord, color, counts)
-    end)
+    {territory, dead_stones} =
+      Enum.reduce(groups, {[], []}, fn coord, counts ->
+        Board.territory_group_with_dead_stones(board, coord, color, counts)
+      end)
 
-    { length(territory), length(dead_stones) }
+    {length(territory), length(dead_stones)}
   end
 end

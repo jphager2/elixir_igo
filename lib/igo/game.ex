@@ -7,8 +7,8 @@ defmodule Igo.Game do
     board = Board.new(board_size)
 
     %{
-      black: %{ captures: 0, name: 'Black' },
-      white: %{ captures: 0, name: 'White' },
+      black: %{captures: 0, name: 'Black'},
+      white: %{captures: 0, name: 'White'},
       moves: [],
       passes: 0,
       board: board
@@ -17,34 +17,34 @@ defmodule Igo.Game do
 
   def update_player(game, color, captures) when is_integer(captures) do
     Map.update!(game, color, fn player ->
-      %{ captures: player[:captures] + captures, name: player[:name] }
+      %{captures: player[:captures] + captures, name: player[:name]}
     end)
   end
 
   def update_player(game, color, name) do
     Map.update!(game, color, fn player ->
-      %{ captures: player[:captures], name: name }
+      %{captures: player[:captures], name: name}
     end)
   end
 
   def play(game, color, coord) do
     board = game[:board]
-    { new_board, captures } = Board.place_stone(board, color, coord)
+    {new_board, captures} = Board.place_stone(board, color, coord)
     game = update_board(game, new_board)
     game = update_player(game, color, captures)
     game = update_passes(game, 0)
-    push_move(game, %{ color: color, coord: coord, captures: captures, board: board })
+    push_move(game, %{color: color, coord: coord, captures: captures, board: board})
   end
 
   def pass(game, color) do
     board = game[:board]
     game = update_passes(game, game[:passes] + 1)
-    push_move(game, %{ color: color, pass: true, captures: 0, board: board })
+    push_move(game, %{color: color, pass: true, captures: 0, board: board})
   end
 
   def undo(game) do
     if length(game[:moves]) > 0 do
-      { move, game } = pop_move(game)
+      {move, game} = pop_move(game)
       game = update_board(game, move[:board])
 
       game =

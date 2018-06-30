@@ -61,10 +61,10 @@ defmodule Igo do
 
   """
   def gokifu do
-    games = GoKifu.get_games
+    games = GoKifu.get_games()
 
-    Enum.reduce(games, 1, fn(game, i) ->
-      { black, white, date, result, _ } = game
+    Enum.reduce(games, 1, fn game, i ->
+      {black, white, date, result, _} = game
       Printer.print(String.pad_leading(to_string(i), 5))
       Printer.print(") ")
       Printer.print_color(:black)
@@ -74,13 +74,13 @@ defmodule Igo do
       Printer.puts("")
       i + 1
     end)
-    
+
     index = get_index()
 
     if index != :stop && index > 0 && index <= length(games) do
       game = Enum.at(games, index - 1)
       GoKifu.download_game(game)
-      
+
       file = GoKifu.download_path(game)
       reader = SgfReader.new(file)
 
@@ -94,6 +94,7 @@ defmodule Igo do
     cond do
       Regex.match?(@index_regex, index) ->
         String.to_integer(index)
+
       true ->
         :stop
     end
@@ -104,18 +105,23 @@ defmodule Igo do
 
     index = get_seek_index()
 
-    reader = cond do
-      index == :next ->
-        SgfReader.next(reader)
-      index == :previous ->
-        SgfReader.previous(reader)
-      index == :stop ->
-        :stop
-      is_integer(index) ->
-        SgfReader.seek(reader, index)
-      true ->
-        reader
-    end
+    reader =
+      cond do
+        index == :next ->
+          SgfReader.next(reader)
+
+        index == :previous ->
+          SgfReader.previous(reader)
+
+        index == :stop ->
+          :stop
+
+        is_integer(index) ->
+          SgfReader.seek(reader, index)
+
+        true ->
+          reader
+      end
 
     if reader == :stop do
       Printer.puts("Sayonara")
@@ -134,12 +140,16 @@ defmodule Igo do
     cond do
       Regex.match?(@next_regex, index) ->
         :next
+
       Regex.match?(@previous_regex, index) ->
         :previous
+
       Regex.match?(@index_regex, index) ->
         String.to_integer(index)
+
       Regex.match?(@stop_regex, index) ->
         :stop
+
       true ->
         :continue
     end
@@ -150,20 +160,25 @@ defmodule Igo do
 
     color = Game.turn(game)
     move = get_move(color)
+
     game =
       cond do
         move == :pass ->
           Game.pass(game, color)
+
         move == :undo ->
           Game.undo(game)
+
         true ->
           cond do
             Rules.play_on_stone?(game, move) ->
               print_error("You can't play on top of a stone!")
               game
+
             Rules.ko?(game, move, color) ->
               print_error("You can't play the ko!")
               game
+
             true ->
               game = Game.play(game, color, move)
 
@@ -184,13 +199,13 @@ defmodule Igo do
       Game.print(game)
       white = get_territory_groups(:white, [])
 
-      { black_territory, black_dead_stones } = Rules.count_territory(game, :black, black)
-      { white_territory, white_dead_stones } = Rules.count_territory(game, :white, white)
+      {black_territory, black_dead_stones} = Rules.count_territory(game, :black, black)
+      {white_territory, white_dead_stones} = Rules.count_territory(game, :white, white)
 
       game = Game.update_player(game, :black, black_dead_stones)
       game = Game.update_player(game, :white, white_dead_stones)
 
-      print_result(game, { black_territory, white_territory }, 6.5)
+      print_result(game, {black_territory, white_territory}, 6.5)
     else
       play(game)
     end
@@ -203,10 +218,13 @@ defmodule Igo do
     cond do
       Regex.match?(@pass_regex, input) ->
         :pass
+
       Regex.match?(@undo_regex, input) ->
         :undo
+
       coord ->
-        { String.to_integer(coord["row"]), String.to_integer(coord["col"]) }
+        {String.to_integer(coord["row"]), String.to_integer(coord["col"])}
+
       true ->
         get_move(color)
     end
@@ -229,18 +247,21 @@ defmodule Igo do
     cond do
       Regex.match?(@done_regex, input) ->
         group
+
       coord_match ->
         coord = {
           String.to_integer(coord_match["row"]),
           String.to_integer(coord_match["col"])
         }
+
         get_territory_groups(color, group ++ [coord])
+
       true ->
         get_territory_groups(color, group)
     end
   end
 
-  defp print_result(game, { black_territory, white_territory }, komi) do
+  defp print_result(game, {black_territory, white_territory}, komi) do
     Game.print(game)
 
     black_points = game[:black][:captures] + black_territory
@@ -250,18 +271,22 @@ defmodule Igo do
       cond do
         black_points > white_points ->
           :black
+
         black_points < white_points ->
           :white
+
         true ->
           :tie
       end
 
     Printer.print("Black: #{black_points}, White: #{white_points}")
+
     if komi > 0 do
       Printer.puts(" (komi: #{komi})")
     else
       Printer.puts("")
     end
+
     if winner == :tie do
       Printer.puts("The result is a tie!")
     else
