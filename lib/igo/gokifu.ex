@@ -2,13 +2,6 @@ Application.ensure_all_started(:inets)
 Application.ensure_all_started(:ssl)
 
 defmodule Igo.GoKifu do
-  def get(url) do
-    {:ok, {{'HTTP/1.1', 200, 'OK'}, _headers, body}} =
-      :httpc.request(:get, {url, []}, [], [])
-
-    :erlang.iolist_to_binary(body)
-  end
-
   def get_games do
     html = get('http://gokifu.com')
 
@@ -22,13 +15,19 @@ defmodule Igo.GoKifu do
 
   def download_game(game) do
     url = elem(game, 4)
-    filename = Enum.at(String.split(url, "/"), -1)
 
     sgf = get(String.to_charlist(url))
-    File.write!("/home/john/Downloads/#{filename}", sgf)
+    File.write!(download_path(game), sgf)
   end
 
-  def build_game(tag) do
+  def download_path(game) do
+    url = elem(game, 4)
+    filename = Enum.at(String.split(url, "/"), -1)
+
+    "/home/john/Downloads/#{filename}"
+  end
+
+  defp build_game(tag) do
     [black, white] =
       tag
       |> Floki.find(".player_name a")
@@ -45,5 +44,12 @@ defmodule Igo.GoKifu do
       |> Floki.text
 
     { black, white, date, result, url }
+  end
+
+  defp get(url) do
+    {:ok, {{'HTTP/1.1', 200, 'OK'}, _headers, body}} =
+      :httpc.request(:get, {url, []}, [], [])
+
+    :erlang.iolist_to_binary(body)
   end
 end

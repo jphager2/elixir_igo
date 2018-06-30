@@ -27,34 +27,6 @@ defmodule Igo.Game do
     end)
   end
 
-  def update_board(game, board) do
-    Map.update!(game, :board, fn old_board ->
-      if length(board) == length(old_board) do
-        board
-      else
-        old_board
-      end
-    end)
-  end
-
-  def update_passes(game, passes) do
-    Map.update!(game, :passes, fn _old_passes ->
-      passes
-    end)
-  end
-
-  def push_move(game, move) do
-    Map.update!(game, :moves, fn moves ->
-      moves ++ [move]
-    end)
-  end
-
-  def pop_move(game) do
-    Map.get_and_update(game, :moves, fn moves ->
-      List.pop_at(moves, -1)
-    end)
-  end
-
   def play(game, color, coord) do
     board = game[:board]
     { new_board, captures } = Board.place_stone(board, color, coord)
@@ -105,5 +77,33 @@ defmodule Igo.Game do
     Printer.puts("")
 
     Board.print(game[:board])
+  end
+
+  defp update_board(game, board) do
+    Map.update!(game, :board, fn old_board ->
+      if length(board) == length(old_board) do
+        board
+      else
+        old_board
+      end
+    end)
+  end
+
+  defp update_passes(game, passes) do
+    Map.update!(game, :passes, fn _old_passes ->
+      passes
+    end)
+  end
+
+  defp push_move(game, move) do
+    Map.update!(game, :moves, fn moves ->
+      moves ++ [move]
+    end)
+  end
+
+  defp pop_move(game) do
+    Map.get_and_update(game, :moves, fn moves ->
+      List.pop_at(moves, -1)
+    end)
   end
 end

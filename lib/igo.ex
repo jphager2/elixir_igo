@@ -88,7 +88,7 @@ defmodule Igo do
     end
   end
 
-  def get_index do
+  defp get_index do
     index = String.trim(IO.gets("Pick a game: "))
 
     cond do
@@ -99,7 +99,7 @@ defmodule Igo do
     end
   end
 
-  def review(reader) do
+  defp review(reader) do
     SgfReader.print(reader)
 
     index = get_seek_index()
@@ -124,11 +124,11 @@ defmodule Igo do
     end
   end
 
-  def get_sgf_file do
+  defp get_sgf_file do
     String.trim(IO.gets("Enter a file name: "))
   end
 
-  def get_seek_index do
+  defp get_seek_index do
     index = String.trim(IO.gets("Seek to move (e.g. next, previous, 42, stop): "))
 
     cond do
@@ -145,7 +145,7 @@ defmodule Igo do
     end
   end
 
-  def play(game) do
+  defp play(game) do
     Game.print(game)
 
     color = Game.turn(game)
@@ -196,7 +196,7 @@ defmodule Igo do
     end
   end
 
-  def get_move(color) do
+  defp get_move(color) do
     input = IO.gets("It's #{color}'s turn. Enter move (e.g. 2, 2 OR pass OR undo): ")
     coord = Regex.named_captures(@coord_regex, input)
 
@@ -212,7 +212,7 @@ defmodule Igo do
     end
   end
 
-  def get_size do
+  defp get_size do
     result = Integer.parse(IO.gets("Enter a board size (9, 13, 19): "))
 
     if result == :error do
@@ -222,7 +222,7 @@ defmodule Igo do
     end
   end
 
-  def get_territory_groups(color, group) do
+  defp get_territory_groups(color, group) do
     input = IO.gets("Mark #{color}'s territory (e.g. 2, 2 OR done): ")
     coord_match = Regex.named_captures(@coord_regex, input)
 
@@ -240,7 +240,7 @@ defmodule Igo do
     end
   end
 
-  def print_result(game, { black_territory, white_territory }, komi) do
+  defp print_result(game, { black_territory, white_territory }, komi) do
     Game.print(game)
 
     black_points = game[:black][:captures] + black_territory
@@ -269,7 +269,7 @@ defmodule Igo do
     end
   end
 
-  def print_error(msg) do
+  defp print_error(msg) do
     Printer.puts(msg)
   end
 end

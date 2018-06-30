@@ -3,15 +3,7 @@ alias Igo.Printer, as: Printer
 
 defmodule Igo.Board do
   def new(size) do
-    initialize(size * size, [])
-  end
-
-  def initialize(size, board) when size <= 0 do
-    board
-  end
-
-  def initialize(size, board) do
-    initialize(size - 1, board ++ [:liberty])
+    build_board(size * size, [])
   end
 
   def place_stone(board, color, coord) do
@@ -37,42 +29,27 @@ defmodule Igo.Board do
     { board, length(captures) }
   end
 
-  def stone_group_without_liberties(board, coord) do
-    group = [coord]
-    color = at_coord(board, coord)
+  def star?(size, { y, x }) do
+    middle = (size - 1) / 2
 
-    if color == :liberty do
-      :liberty
-    else
-      coords = coords_around(board, coord)
-      Enum.reduce(coords, group, fn(next_coord, new_group) ->
-        stone_group_without_liberties(board, next_coord, color, new_group)
-      end)
+    cond do
+      size < 9 && size >= 3 ->
+        y == middle && x == middle
+      size < 13 ->
+        ((y == 2 || y == 6) && (x == 2 || x == 6)) || (y == 4 && x == 4)
+      size >= 13 ->
+        bottom = size - 4
+        (y == 3 || y == middle || y == bottom) && (x == 3 || x == middle || x == bottom)
     end
   end
 
-  def stone_group_without_liberties(board, coord, color, group) do
-    if group == :liberty do
-      :liberty
-    else
-      next_color = at_coord(board, coord)
+  def at_coord(board, coord) do
+    index = board_index(board, coord)
+    Enum.at(board, index)
+  end
 
-      cond do
-        next_color == :liberty ->
-          :liberty
-        next_color == color ->
-          if Enum.member?(group, coord) do
-            group
-          else
-            coords = coords_around(board, coord)
-            Enum.reduce(coords, group ++ [coord], fn(next_coord, new_group) ->
-              stone_group_without_liberties(board, next_coord, color, new_group)
-            end)
-          end
-        true ->
-          group
-      end
-    end
+  def print(board) do
+    Printer.print_rows(Enum.chunk_every(board, size(board)))
   end
 
   def territory_group_with_dead_stones(board, coord, color, { territory, dead_stones }) do
@@ -100,7 +77,45 @@ defmodule Igo.Board do
     end
   end
 
-  def coords_around(board, { y, x }) do
+  def stone_group_without_liberties(board, coord) do
+    group = [coord]
+    color = at_coord(board, coord)
+
+    if color == :liberty do
+      :liberty
+    else
+      coords = coords_around(board, coord)
+      Enum.reduce(coords, group, fn(next_coord, new_group) ->
+        stone_group_without_liberties(board, next_coord, color, new_group)
+      end)
+    end
+  end
+
+  defp stone_group_without_liberties(board, coord, color, group) do
+    if group == :liberty do
+      :liberty
+    else
+      next_color = at_coord(board, coord)
+
+      cond do
+        next_color == :liberty ->
+          :liberty
+        next_color == color ->
+          if Enum.member?(group, coord) do
+            group
+          else
+            coords = coords_around(board, coord)
+            Enum.reduce(coords, group ++ [coord], fn(next_coord, new_group) ->
+              stone_group_without_liberties(board, next_coord, color, new_group)
+            end)
+          end
+        true ->
+          group
+      end
+    end
+  end
+
+  defp coords_around(board, { y, x }) do
     coords = [
       { y - 1, x },
       { y, x + 1 },
@@ -113,41 +128,26 @@ defmodule Igo.Board do
     end)
   end
 
-  def remove_stones(board, coords) do
+  defp remove_stones(board, coords) do
     Enum.reduce(coords, board, fn(coord, board) ->
       index = board_index(board, coord)
       List.replace_at(board, index, :liberty)
     end)
   end
 
-  def at_coord(board, coord) do
-    index = board_index(board, coord)
-    Enum.at(board, index)
-  end
-
-  def star?(size, { y, x }) do
-    middle = (size - 1) / 2
-
-    cond do
-      size < 9 && size >= 3 ->
-        y == middle && x == middle
-      size < 13 ->
-        ((y == 2 || y == 6) && (x == 2 || x == 6)) || (y == 4 && x == 4)
-      size >= 13 ->
-        bottom = size - 4
-        (y == 3 || y == middle || y == bottom) && (x == 3 || x == middle || x == bottom)
-    end
-  end
-
-  def size(board) do
+  defp size(board) do
     round(:math.sqrt(length(board)))
   end
 
-  def board_index(board, { y, x }) do
+  defp board_index(board, { y, x }) do
     size(board) * y + x
   end
 
-  def print(board) do
-    Printer.print_rows(Enum.chunk_every(board, size(board)))
+  defp build_board(size, board) when size <= 0 do
+    board
+  end
+
+  defp build_board(size, board) do
+    build_board(size - 1, board ++ [:liberty])
   end
 end

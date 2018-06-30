@@ -27,16 +27,6 @@ defmodule Igo.SgfReader do
     reset_game(reader)
   end
 
-  def reset_game(reader) do
-    size = String.to_integer(reader[:size])
-    game = Game.new(size)
-    game = Game.update_player(game, :black, "#{reader[:black]} [#{reader[:black_rank]}]")
-    game = Game.update_player(game, :white, "#{reader[:white]} [#{reader[:white_rank]}]")
-
-    reader = Map.put(reader, :move_index, -1)
-    Map.put(reader, :game, game)
-  end
-
   def seek(reader, index) do
     cond do
       index < 0 ->
@@ -79,21 +69,35 @@ defmodule Igo.SgfReader do
     seek(reader, reader[:move_index] - 1)
   end
 
-  def parse_meta(sgf) do
+  def print(reader) do
+    Game.print(reader[:game])
+  end
+
+  defp reset_game(reader) do
+    size = String.to_integer(reader[:size])
+    game = Game.new(size)
+    game = Game.update_player(game, :black, "#{reader[:black]} [#{reader[:black_rank]}]")
+    game = Game.update_player(game, :white, "#{reader[:white]} [#{reader[:white_rank]}]")
+
+    reader = Map.put(reader, :move_index, -1)
+    Map.put(reader, :game, game)
+  end
+
+  defp parse_meta(sgf) do
     Enum.at(String.split(sgf, ";"), 1)
   end
 
-  def parse_meta(meta, key) do
+  defp parse_meta(meta, key) do
     matcher = Regex.compile!("#{key}\\[(.*?)\\]")
     match = Regex.run(matcher, meta)
     Enum.at(match, 1)
   end
 
-  def parse_moves(sgf) do
+  defp parse_moves(sgf) do
     Enum.drop(String.split(sgf, ";"), 2)
   end
 
-  def parse_move(move) do
+  defp parse_move(move) do
     match = Regex.named_captures(@move_regex, move)
 
     pass_move = { :pass, { to_color(match["color"]) } }
@@ -109,19 +113,15 @@ defmodule Igo.SgfReader do
     end
   end
 
-  def letter_to_integer(row) do
+  defp letter_to_integer(row) do
     Enum.at(String.to_charlist(row), 0) - ?a
   end
 
-  def to_color(color) do
+  defp to_color(color) do
     if color == "B" do
       :black
     else
       :white
     end
-  end
-
-  def print(reader) do
-    Game.print(reader[:game])
   end
 end
