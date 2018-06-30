@@ -100,7 +100,7 @@ defmodule Igo do
     end
   end
 
-  defp review(reader) do
+  def review(reader) do
     SgfReader.print(reader)
 
     index = get_seek_index()

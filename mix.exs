@@ -3,8 +3,9 @@ defmodule ElixirGo.MixProject do
 
   def project do
     [
-      app: :elixir_igo,
+      app: :igo,
       version: "0.1.0",
+      escript: escript(),
       elixir: "~> 1.6",
       start_permanent: Mix.env() == :prod,
       deps: deps()
@@ -16,6 +17,10 @@ defmodule ElixirGo.MixProject do
     [
       extra_applications: [:logger]
     ]
+  end
+
+  defp escript do
+    [main_module: Igo.CLI]
   end
 
   # Run "mix help deps" to learn about dependencies.
