@@ -96,7 +96,12 @@ defmodule Igo.SgfReader do
   defp parse_meta(meta, key) do
     matcher = Regex.compile!("#{key}\\[(.*?)\\]")
     match = Regex.run(matcher, meta)
-    Enum.at(match, 1)
+
+    if match do
+      Enum.at(match, 1)
+    else
+      ""
+    end
   end
 
   defp parse_moves(sgf) do
