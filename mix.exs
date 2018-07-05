@@ -37,7 +37,7 @@ defmodule ElixirGo.MixProject do
 
   defp package do
     [
-      name: "exlixir_igo",
+      name: "elixir_igo",
       files: ["lib", "mix.exs", "README*", "LICENSE*"],
       licenses: ["MIT"],
       links: %{"GitHub" => "https://github.com/jphager2/elixir_igo"},
