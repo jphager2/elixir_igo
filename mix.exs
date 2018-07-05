@@ -4,15 +4,15 @@ defmodule ElixirGo.MixProject do
   def project do
     [
       app: :igo,
-      description: "The game of Go in Elixir",
-      licenses: ["MIT"],
-      links: %{"GitHub" => "https://github.com/jphager2/elixir_igo"},
       version: "0.1.0",
       escript: escript(),
       elixir: "~> 1.6",
       start_permanent: Mix.env() == :prod,
+      description: "The game of Go in Elixir",
+      package: package(),
+      deps: deps(),
+      name: "elixir_igo",
       source_url: "https://github.com/jphager2/elixir_igo",
-      deps: deps()
     ]
   end
 
@@ -31,6 +31,15 @@ defmodule ElixirGo.MixProject do
   defp deps do
     [
       {:floki, "~> 0.20.0"}
+    ]
+  end
+
+  defp package do
+    [
+      name: 
+      files: ["lib", "priv", "mix.exs", "README*", "readme*", "LICENSE*", "license*"],
+      licenses: ["MIT"],
+      links: %{"GitHub" => "https://github.com/jphager2/elixir_igo"},
     ]
   end
 end
