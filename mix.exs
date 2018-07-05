@@ -8,6 +8,7 @@ defmodule ElixirGo.MixProject do
       escript: escript(),
       elixir: "~> 1.6",
       start_permanent: Mix.env() == :prod,
+      source_url: "https://github.com/jphager2/elixir_igo",
       deps: deps()
     ]
   end
