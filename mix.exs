@@ -4,6 +4,9 @@ defmodule ElixirGo.MixProject do
   def project do
     [
       app: :igo,
+      description: "The game of Go in Elixir",
+      licenses: ["MIT"],
+      links: %{"GitHub" => "https://github.com/jphager2/elixir_igo"},
       version: "0.1.0",
       escript: escript(),
       elixir: "~> 1.6",
