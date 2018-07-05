@@ -9,7 +9,6 @@ defmodule ElixirGo.MixProject do
       elixir: "~> 1.6",
       start_permanent: Mix.env() == :prod,
       description: "The game of Go in Elixir",
-      maintainers: ["jphager2"],
       package: package(),
       deps: deps(),
       name: "elixir_igo",
@@ -38,9 +37,10 @@ defmodule ElixirGo.MixProject do
   defp package do
     [
       name: "exlixir_igo",
-      files: ["lib", "priv", "mix.exs", "README*", "LICENSE*"],
+      files: ["lib", "mix.exs", "README*", "LICENSE*"],
       licenses: ["MIT"],
       links: %{"GitHub" => "https://github.com/jphager2/elixir_igo"},
+      maintainers: ["jphager2"],
     ]
   end
 end
