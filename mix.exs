@@ -3,15 +3,15 @@ defmodule ElixirGo.MixProject do
 
   def project do
     [
-      app: :igo,
-      version: "0.1.0",
+      app: :elixir_igo,
+      version: "0.1.1",
       escript: escript(),
       elixir: "~> 1.6",
       start_permanent: Mix.env() == :prod,
       description: "The game of Go in Elixir",
       package: package(),
       deps: deps(),
-      name: "elixir_igo",
+      name: "Igo",
       source_url: "https://github.com/jphager2/elixir_igo",
     ]
   end
