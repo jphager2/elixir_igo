@@ -4,7 +4,7 @@ defmodule ElixirGo.MixProject do
   def project do
     [
       app: :elixir_igo,
-      version: "0.1.1",
+      version: "0.1.2",
       escript: escript(),
       elixir: "~> 1.6",
       start_permanent: Mix.env() == :prod,
