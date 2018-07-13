@@ -24,7 +24,10 @@ defmodule ElixirGo.MixProject do
   end
 
   defp escript do
-    [main_module: Igo.CLI]
+    [
+      name: "igo",
+      main_module: Igo.CLI
+    ]
   end
 
   # Run "mix help deps" to learn about dependencies.

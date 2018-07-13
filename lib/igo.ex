@@ -85,6 +85,7 @@ defmodule Igo do
       reader = SgfReader.new(file)
 
       review(reader)
+      File.rm(file)
     end
   end
 

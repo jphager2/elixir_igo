@@ -13,18 +13,18 @@ defmodule Igo.GoKifu do
     games
   end
 
-  def download_game(game) do
+  def download_game(game, dir \\ ".") do
     url = elem(game, 4)
 
     sgf = get(String.to_charlist(url))
-    File.write!(download_path(game), sgf)
+    File.write!(download_path(game, dir), sgf)
   end
 
-  def download_path(game) do
+  def download_path(game, dir \\ ".") do
     url = elem(game, 4)
     filename = Enum.at(String.split(url, "/"), -1)
 
-    "/home/john/Downloads/#{filename}"
+    "#{dir}/#{filename}"
   end
 
   defp build_game(tag) do
